@@ -55,6 +55,15 @@ pub enum OrbitContractError {
     VaultExpired = 306,
     LifetimeCapExceeded = 307,
     InvalidVaultLimit = 308,
+    EmergencyPaused = 309,
+    RateLimitExceeded = 310,
+    InvalidRateLimit = 311,
+    InvalidFeeConfig = 312,
+    UnauthorizedAdmin = 313,
+    InvalidMilestoneEscrow = 314,
+    MilestoneAlreadyReleased = 315,
+    MilestoneNotDisputed = 316,
+    InvalidDisputeSplit = 317,
 }
 
 /// Sentinel `pull_sequence` for a vault that has never settled a pull.
@@ -88,6 +97,16 @@ pub const MAX_OVERDRAFT_PERCENTAGE: u32 = 20;
 
 /// Challenge period between recovery initiation and execution.
 pub const RECOVERY_TIMELOCK_SECONDS: u64 = 14 * 24 * 60 * 60;
+
+/// Maximum protocol treasury fee, in basis points (10%).
+pub const MAX_PROTOCOL_FEE_BPS: u32 = 1_000;
+
+/// Safety window after an emergency pause before vault owners may cancel their
+/// subscription unilaterally and reclaim any stuck allowance.
+pub const PAUSE_RECOVERY_TIMELOG_SECONDS: u64 = 7 * 24 * 60 * 60;
+
+/// Upper bound on milestone escrow stages, keeping approval loops bounded.
+pub const MAX_MILESTONE_ESCROW_STAGES: u32 = 20;
 
 /// Calculates (threshold, extend_to) in ledgers for vault persistent storage
 /// and contract instance storage based on interval_seconds.
