@@ -213,6 +213,14 @@
                           "val": {
                             "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOLZM"
                           }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                          }
                         }
                       ]
                     },
@@ -232,6 +240,14 @@
                           },
                           "val": {
                             "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARQG5"
+                          }
+                        },
+                        {
+                          "key": {
+                            "symbol": "token"
+                          },
+                          "val": {
+                            "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
                           }
                         }
                       ]
@@ -525,6 +541,36 @@
               "ext": "v0",
               "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
               "key": {
+                "vec": [
+                  {
+                    "symbol": "VaultLimitSchema"
+                  },
+                  {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+                  },
+                  {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
+                ]
+              },
+              "durability": "persistent",
+              "val": {
+                "bool": true
+              }
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 518400
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+              "key": {
                 "map": [
                   {
                     "key": {
@@ -553,6 +599,14 @@
                     },
                     "val": {
                       "i128": "290000000"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "expiration_ledger"
+                    },
+                    "val": {
+                      "u32": 0
                     }
                   },
                   {
@@ -597,6 +651,14 @@
                   },
                   {
                     "key": {
+                      "symbol": "lifetime_cap_amount"
+                    },
+                    "val": {
+                      "i128": "-1"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "payment_status"
                     },
                     "val": {
@@ -613,10 +675,26 @@
                   },
                   {
                     "key": {
+                      "symbol": "setup_fee"
+                    },
+                    "val": {
+                      "i128": "0"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "token"
                     },
                     "val": {
                       "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "total_pulled_amount"
+                    },
+                    "val": {
+                      "i128": "290000000"
                     }
                   },
                   {
@@ -1283,6 +1361,50 @@
                 },
                 {
                   "i128": "400000000"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "failed_call": false
+    },
+    {
+      "event": {
+        "ext": "v0",
+        "contract_id": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM",
+        "type_": "contract",
+        "body": {
+          "v0": {
+            "topics": [
+              {
+                "symbol": "payroll_summary"
+              },
+              {
+                "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+              }
+            ],
+            "data": {
+              "vec": [
+                {
+                  "vec": [
+                    {
+                      "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                    }
+                  ]
+                },
+                {
+                  "vec": [
+                    {
+                      "i128": "400000000"
+                    }
+                  ]
+                },
+                {
+                  "u32": 2
+                },
+                {
+                  "u32": 0
                 }
               ]
             }
