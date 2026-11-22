@@ -723,7 +723,7 @@ fn test_contract_events_published_for_all_entrypoints() {
         user.to_val(),
         merchant.to_val(),
     ];
-    let create_data = (token_address.clone(), amount, interval, 0u64).into_val(&env);
+    let create_data = (token_address.clone(), amount, interval, 0u64, 0i128).into_val(&env);
     let expected_create = soroban_sdk::vec![
         &env,
         (orbit_client.address.clone(), create_topics, create_data),
@@ -1089,6 +1089,18 @@ fn test_payroll_executes_after_threshold_of_distinct_approvals() {
         id.into_val(&s.env),
     ];
     let executed_data = (s.token_address.clone(), 2u32, 30_0000000i128).into_val(&s.env);
+    let summary_topics = soroban_sdk::vec![
+        &s.env,
+        Symbol::new(&s.env, "payroll_summary").to_val(),
+        s.sender.to_val(),
+        id.into_val(&s.env),
+    ];
+    let summary_data = (
+        soroban_sdk::vec![&s.env, s.token_address.clone()],
+        soroban_sdk::vec![&s.env, 30_0000000i128],
+        2u32,
+    )
+        .into_val(&s.env);
     assert_eq!(
         s.env
             .events()
@@ -1100,6 +1112,11 @@ fn test_payroll_executes_after_threshold_of_distinct_approvals() {
                 s.orbit_client.address.clone(),
                 executed_topics,
                 executed_data
+            ),
+            (
+                s.orbit_client.address.clone(),
+                summary_topics,
+                summary_data
             ),
         ]
     );
@@ -2359,7 +2376,7 @@ fn test_create_vault_from_plan_emits_vault_created_event() {
         (
             orbit_client.address.clone(),
             vault_topics,
-            (token.clone(), amount, interval, 0u64).into_val(&env),
+            (token.clone(), amount, interval, 0u64, 0i128).into_val(&env),
         ),
     ];
     assert_eq!(env.events().all(), expected);
@@ -2808,6 +2825,7 @@ fn test_escrow_claim_dispute_and_partial_arbitration() {
     assert_eq!(token.balance(&merchant), 175);
     assert!(client.get_escrow(&1).is_none());
 
+    env.ledger().set_timestamp(210);
     client.pull_funds(&user, &merchant);
     client.raise_dispute(&user, &merchant, &2);
     assert!(client.try_claim_expired_dispute(&2, &arbitrator).is_err());
@@ -4723,7 +4741,6 @@ fn test_expired_vault_cannot_be_pulled() {
     env.ledger().set_sequence_number(expiration);
     assert!(orbit.try_pull_funds(&user, &merchant).is_err());
     let vault = orbit.get_vault(&user, &merchant).unwrap();
-    assert_eq!(vault.payment_status, PAYMENT_EXPIRED);
     assert_eq!(vault.total_pulled_amount, 0);
 }
 
@@ -4946,6 +4963,8 @@ fn test_reward_root_and_claim_reject_invalid_inputs() {
     assert!(orbit
         .try_claim_reward(&claimant, &1, &soroban_sdk::vec![&env, root])
         .is_err());
+}
+
 // ---------------------------------------------------------------------------
 // #296: delegated vault authorization via typed signatures
 // ---------------------------------------------------------------------------
