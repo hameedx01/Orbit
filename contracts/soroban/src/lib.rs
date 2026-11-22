@@ -5,8 +5,6 @@
 use soroban_sdk::{
     contract, contractclient, contracterror, contractimpl, contracttype, panic_with_error, token,
     Address, Bytes, BytesN, Env, String, Symbol, Vec,
-    contract, contractclient, contracterror, contractimpl, contracttype, token, Address, Bytes,
-    BytesN, Env, String, Symbol, Vec,
 };
 
 // ----------------------------------------------------------------------------
@@ -55,6 +53,15 @@ pub enum OrbitContractError {
     VaultExpired = 306,
     LifetimeCapExceeded = 307,
     InvalidVaultLimit = 308,
+    EmergencyPaused = 309,
+    RateLimitExceeded = 310,
+    InvalidRateLimit = 311,
+    InvalidFeeConfig = 312,
+    UnauthorizedAdmin = 313,
+    InvalidMilestoneEscrow = 314,
+    MilestoneAlreadyReleased = 315,
+    MilestoneNotDisputed = 316,
+    InvalidDisputeSplit = 317,
 }
 
 /// Sentinel `pull_sequence` for a vault that has never settled a pull.
@@ -88,6 +95,16 @@ pub const MAX_OVERDRAFT_PERCENTAGE: u32 = 20;
 
 /// Challenge period between recovery initiation and execution.
 pub const RECOVERY_TIMELOCK_SECONDS: u64 = 14 * 24 * 60 * 60;
+
+/// Maximum protocol treasury fee, in basis points (10%).
+pub const MAX_PROTOCOL_FEE_BPS: u32 = 1_000;
+
+/// Safety window after an emergency pause before vault owners may cancel their
+/// subscription unilaterally and reclaim any stuck allowance.
+pub const PAUSE_RECOVERY_TIMELOG_SECONDS: u64 = 7 * 24 * 60 * 60;
+
+/// Upper bound on milestone escrow stages, keeping approval loops bounded.
+pub const MAX_MILESTONE_ESCROW_STAGES: u32 = 20;
 
 /// Calculates (threshold, extend_to) in ledgers for vault persistent storage
 /// and contract instance storage based on interval_seconds.
@@ -591,6 +608,72 @@ pub enum FeatureKey {
     /// Marks a vault stored with the #300 `VaultData` layout. Without it the
     /// entry is decoded as `LegacyVaultData` and migrated on first read.
     VaultLimitSchema(Address, Address),
+    /// Global emergency pause state (#223), stored in instance storage.
+    PauseState,
+    /// Rolling-window allowance configured for a subscription vault (#226)
+    VaultRateLimit(Address, Address),
+    /// Global protocol treasury fee configuration (#224)
+    ProtocolFee,
+}
+
+/// Global circuit-breaker state. Stored in instance storage so pausing the
+/// protocol is one cheap, atomic write.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PauseState {
+    pub paused: bool,
+    /// Ledger timestamp at which the current pause began. Zero while unpaused.
+    pub paused_at: u64,
+}
+
+/// Rolling-window allowance for a fixed-interval subscription vault (#226).
+/// The window is measured in ledgers, not seconds, so capacity reset is
+/// deterministic across ledgers with irregular close times.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct VaultRateLimit {
+    pub window_duration_ledgers: u32,
+    pub max_cumulative_amount: i128,
+    /// Ledger at which the current window began.
+    pub window_start_ledger: u32,
+    /// Amount pulled in the current window.
+    pub window_spent: i128,
+}
+
+/// Protocol treasury fee configuration (#224). `fee_bps` is capped at
+/// [`MAX_PROTOCOL_FEE_BPS`] when configured.
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProtocolFeeConfig {
+    pub fee_bps: u32,
+    pub treasury: Address,
+}
+
+/// Lifecycle of a milestone escrow (#225).
+#[contracttype]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MilestoneEscrowStatus {
+    Pending,
+    Approved,
+    Disputed,
+    Refunded,
+}
+
+/// Milestone-based payroll escrow with an independent dispute arbiter (#225).
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MilestoneEscrow {
+    pub id: u64,
+    pub employer: Address,
+    pub contractor: Address,
+    pub arbiter: Address,
+    pub token: Address,
+    pub total_amount: i128,
+    pub milestone_amounts: Vec<i128>,
+    /// One flag per milestone, parallel to `milestone_amounts`.
+    pub released: Vec<bool>,
+    pub released_amount: i128,
+    pub status: MilestoneEscrowStatus,
 }
 
 // ----------------------------------------------------------------------------
@@ -1715,8 +1798,6 @@ impl OrbitContract {
         );
     }
 
-    /// Create a vault with both trial period and setup fee (#253)
-    pub fn create_vault_with_trial_fee(
     /// Create a vault with both trial period and setup fee (#253).
     /// Named to fit Soroban's 32-character limit on contract function names;
     /// the original `create_vault_with_trial_and_setup_fee` (37) failed to build.
